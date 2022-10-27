@@ -39,9 +39,11 @@ packages:
   comms:
     dependency: "direct main"
     description:
-      path: ".."
-      relative: true
-    source: path
+      path: "."
+      ref: main
+      resolved-ref: c148652ad2ebc34134c46ae9744ff6f7a7fb830c
+      url: "https://github.com/donpaul120/moniepoint-comms-flutter"
+    source: git
     version: "0.0.1"
   cupertino_icons:
     dependency: "direct main"
