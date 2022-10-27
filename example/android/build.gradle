@@ -1,0 +1,48 @@
+buildscript {
+    ext.kotlin_version = '1.7.10'
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.1.3'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+def githubProps = new Properties()
+def githubFile = rootProject.file("github.properties")
+if (githubFile.exists()) {
+    githubProps.load(new FileInputStream(githubFile))
+}
+
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url = "https://maven.pkg.github.com/donpaul120/moniepoint-pos-comms"
+            credentials(HttpHeaderCredentials) {
+                name = "Authorization"
+                value = "Bearer ${githubProps.getProperty("github.key") as String}"
+            }
+            authentication {
+                header(HttpHeaderAuthentication)
+            }
+        }
+    }
+}
+
+rootProject.buildDir = '../build'
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(':app')
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
