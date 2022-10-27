@@ -41,7 +41,7 @@ packages:
     description:
       path: "."
       ref: main
-      resolved-ref: c148652ad2ebc34134c46ae9744ff6f7a7fb830c
+      resolved-ref: "76f5f8ddbeb1dadccda6b4ef251de680e5d58918"
       url: "https://github.com/donpaul120/moniepoint-comms-flutter"
     source: git
     version: "0.0.1"

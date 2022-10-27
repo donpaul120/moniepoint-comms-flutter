@@ -27,6 +27,7 @@ dependencies:
     git:
       url: https://github.com/donpaul120/moniepoint-comms-flutter
       ref: main
+      path: .
 
 
   # The following adds the Cupertino Icons font to your application.
