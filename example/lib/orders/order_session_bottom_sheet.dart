@@ -168,6 +168,8 @@ class _OrderSessionBottomSheet extends State<OrderSessionBottomSheet> {
 
   @override
   void dispose() {
+    //Ensure to close the session if this screen gets disposed.
+    moniepointClient.sendCancel();
     _sessionSubscription?.cancel();
     super.dispose();
   }
