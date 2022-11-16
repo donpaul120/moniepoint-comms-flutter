@@ -1,9 +1,10 @@
 import 'dart:async';
 
-import 'package:comms/peer_device.dart';
 import 'package:flutter/services.dart';
+import 'package:moniepoint_pos_comms/peer_device_state.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import 'peer_device.dart';
 import 'protocol_data_request.dart';
 import 'protocol_data_response.dart';
 
@@ -33,7 +34,7 @@ const String _deviceAddressKey = "deviceAddress";
 
 enum ProtocolEventType {
   deviceList,
-  deviceConnection,
+  connectionState,
   cancelData,
   endOfTextData,
   acknowledged,
@@ -70,6 +71,12 @@ class ProtocolEvent<T> {
   static ProtocolEvent<List<PeerDevice>> deviceList(List<PeerDevice> data) {
     return ProtocolEvent<List<PeerDevice>>(
         eventType: ProtocolEventType.deviceList, data: data
+    );
+  }
+
+  static ProtocolEvent<PeerDeviceState> connectionState(PeerDeviceState data) {
+    return ProtocolEvent<PeerDeviceState>(
+        eventType: ProtocolEventType.connectionState, data: data
     );
   }
 }
@@ -159,7 +166,9 @@ class MoniepointProtocolClient extends IMoniepointProtocolData {
     _controller.sink.add(ProtocolEvent.deviceList(deviceList));
   }
 
-  void _processDeviceConnectionMessage(String connectionMessage) {
+  void _processDeviceConnectionMessage(Map<dynamic, dynamic> map) {
+    final deviceState = PeerDeviceState.fromJson(Map<String, dynamic>.from(map));
+    _controller.sink.add(ProtocolEvent.connectionState(deviceState));
   }
 
   void _processProtocolSessionMessage(Map<dynamic, dynamic> map) {
@@ -172,7 +181,7 @@ class MoniepointProtocolClient extends IMoniepointProtocolData {
 
     if (_response == key) {
       final response = ProtocolDataResponse.fromJson(Map<String, dynamic>.from(value));
-      _controller.add(ProtocolEvent.orderResponse(response));
+      _controller.sink.add(ProtocolEvent.orderResponse(response));
     }
   }
 

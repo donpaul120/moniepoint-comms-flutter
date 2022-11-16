@@ -1,6 +1,7 @@
-import 'package:comms/protocol_data_event.dart';
-import 'package:comms/protocol_data_request.dart';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:moniepoint_pos_comms/protocol_data_event.dart';
+import 'package:moniepoint_pos_comms/protocol_data_request.dart';
 
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 

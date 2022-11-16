@@ -2,19 +2,19 @@ package com.moniepoint.pos.comms.flutter.viewmodels
 
 import android.net.wifi.p2p.WifiP2pDevice
 import android.net.wifi.p2p.WifiP2pManager
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.moniepoint.pos.comms.MoniepointPosP2pClientListener
 import com.moniepoint.pos.comms.client.MoniepointPeer
 import com.moniepoint.pos.comms.data.ProtocolData
 import com.moniepoint.pos.comms.data.ProtocolDataMessenger
-import com.moniepoint.pos.comms.flutter.handlers.Constants.Companion.deviceConnectionMessage
 import com.moniepoint.pos.comms.flutter.handlers.Constants.Companion.deviceListMessage
-import com.moniepoint.pos.comms.flutter.handlers.ProtocolDataStreamHandler.Companion.deviceMessage
-import com.moniepoint.pos.comms.flutter.handlers.ProtocolDataStreamHandler.Companion.sessionMessage
+import com.moniepoint.pos.comms.flutter.handlers.deviceMessage
+import com.moniepoint.pos.comms.flutter.handlers.deviceStateMessage
+import com.moniepoint.pos.comms.flutter.handlers.sessionMessage
 import com.moniepoint.pos.comms.flutter.handlers.toMap
 import io.flutter.plugin.common.EventChannel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -41,7 +41,7 @@ class MoniepointProtocolViewModel : ViewModel() {
    }
 
    fun initiatePosRequest(client: MoniepointPeer) {
-      viewModelScope.launch {
+      viewModelScope.launch(Dispatchers.IO) {
          client.initiatePosRequest(ProtocolData.EnquiryData).collectLatest {
             this@MoniepointProtocolViewModel.messenger = it
             handleProtocolMessages(it)
@@ -78,16 +78,16 @@ class MoniepointProtocolViewModel : ViewModel() {
 
       client.connect(deviceAddress, object : WifiP2pManager.ActionListener {
          override fun onSuccess() {
-            eventSink?.success(hashMapOf(deviceConnectionMessage to "$deviceAddress:1"))
+            eventSink?.success(deviceStateMessage(deviceAddress, 1))
          }
 
          override fun onFailure(p0: Int) {
-            eventSink?.success(hashMapOf(deviceConnectionMessage to "$deviceAddress:0:$p0"))
+            eventSink?.success(deviceStateMessage(deviceAddress, 3, p0))
          }
       })
    }
 
    fun sendStandardMessage(protocolData: ProtocolData) {
-      viewModelScope.launch { messenger?.replyMessage(protocolData) }
+      viewModelScope.launch(Dispatchers.IO) { messenger?.replyMessage(protocolData) }
    }
 }

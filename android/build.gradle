@@ -47,5 +47,5 @@ android {
 
 dependencies {
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.5.1"
-    implementation("com.moniepoint.pos:comms:0.0.7-alpha")
+    implementation("com.moniepoint.pos:comms:0.0.8-alpha")
 }
