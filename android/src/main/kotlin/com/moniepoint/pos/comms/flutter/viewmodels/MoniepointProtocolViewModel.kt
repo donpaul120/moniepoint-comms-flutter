@@ -18,6 +18,7 @@ import io.flutter.plugin.common.EventChannel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * @author Paul Okeke
@@ -50,8 +51,7 @@ class MoniepointProtocolViewModel : ViewModel() {
       }
    }
 
-   private fun handleProtocolMessages(it: ProtocolDataMessenger) {
-      Log.e("TAGResp", "${it.message}")
+   private suspend fun handleProtocolMessages(it: ProtocolDataMessenger) = withContext(Dispatchers.Main){
       when (val message = it.message) {
          is ProtocolData.AcknowledgeData -> eventSink?.success(sessionMessage("ack"))
          is ProtocolData.CancelData -> eventSink?.success(sessionMessage("can"))
@@ -90,7 +90,13 @@ class MoniepointProtocolViewModel : ViewModel() {
       })
    }
 
+   fun closeMessenger() {
+      messenger?.close()
+   }
+
    fun sendStandardMessage(protocolData: ProtocolData) {
-      viewModelScope.launch(Dispatchers.IO) { messenger?.replyMessage(protocolData) }
+      viewModelScope.launch(Dispatchers.IO) {
+         messenger?.replyMessage(protocolData)
+      }
    }
 }

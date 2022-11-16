@@ -35,7 +35,7 @@ class _ConnectButtonState extends State<ConnectButton> {
     moniepointClient = IMoniepointProtocolData.getInstance();
     peerDevice = widget.peerDevice;
     _dataStream = moniepointClient.protocolDataStream
-        .filterForDeviceState(peerDevice.deviceAddress);
+        .filterDeviceStateByAddress(peerDevice.deviceAddress);
     super.initState();
   }
 

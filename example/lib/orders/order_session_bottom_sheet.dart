@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:comms_example/colors.dart';
+import 'package:moniepoint_pos_comms/protocol_data_response.dart';
 import 'package:moniepoint_pos_comms/protocol_stream_extension.dart';
 import 'package:flutter/material.dart' hide Colors;
 import 'package:moniepoint_pos_comms/protocol_data_event.dart';
@@ -28,6 +30,7 @@ class _OrderSessionBottomSheet extends State<OrderSessionBottomSheet> {
   final _chars = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
   final Random _rand = Random();
   late final String refNumber = generateReference;
+  StreamSubscription<ProtocolEvent>? _sessionSubscription;
 
   @override
   void initState() {
@@ -40,6 +43,35 @@ class _OrderSessionBottomSheet extends State<OrderSessionBottomSheet> {
     return String.fromCharCodes(Iterable.generate(
         10, (_) => _chars.codeUnitAt(_rand.nextInt(_chars.length)))
     );
+  }
+
+  void _listenForOrderResponse(ProtocolDataRequest request) {
+    _sessionSubscription?.cancel();
+
+    _sessionSubscription = moniepointClient.protocolDataStream
+        .filterBySessionResponse()
+        .listen((event) {
+          switch (event.eventType) {
+            case ProtocolEventType.orderResponse:
+              {
+                moniepointClient.sendEndOfText();
+                final response = event.data as ProtocolDataResponse?;
+                print("ResponseFromPOS: ${response?.toString()}");
+                break;
+              }
+            case ProtocolEventType.cancelData:
+              //The POS has prolly cancelled the transaction
+              break;
+            case ProtocolEventType.invalidData:
+              //We prolly sent an invalid data
+              break;
+            case ProtocolEventType.acknowledged:
+              moniepointClient.sendRequest(request);
+              break;
+            default:
+              break;
+      }
+    });
   }
 
   @override
@@ -101,13 +133,7 @@ class _OrderSessionBottomSheet extends State<OrderSessionBottomSheet> {
               final request = ProtocolDataRequest(
                   refNumber: refNumber, amount: product.amount
               );
-              moniepointClient.protocolDataStream
-                  .filterForOrderResponse()
-                  .listen((event) {
-                    if (event.eventType == ProtocolEventType.acknowledged) {
-                      moniepointClient.sendRequest(request);
-                    }
-                  });
+              _listenForOrderResponse(request);
               moniepointClient.startRequestOrderSession();
             },
             child: const Text(
@@ -138,5 +164,11 @@ class _OrderSessionBottomSheet extends State<OrderSessionBottomSheet> {
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _sessionSubscription?.cancel();
+    super.dispose();
   }
 }
