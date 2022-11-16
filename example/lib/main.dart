@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(primaryColor: Colors.primaryColor),
       home: ChangeNotifierProvider(
         create: (_) => MainViewModel(),
-        child: const OrderListScreen()//const MyHomePage(title: 'Peer Devices'),
+        child: const MyHomePage(title: 'Peer Devices'),
       ),
       routes: AppRoute.buildRouteMap(),
     );

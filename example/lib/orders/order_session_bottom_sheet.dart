@@ -1,7 +1,10 @@
 import 'dart:math';
 
 import 'package:comms_example/colors.dart';
+import 'package:moniepoint_pos_comms/protocol_stream_extension.dart';
 import 'package:flutter/material.dart' hide Colors;
+import 'package:moniepoint_pos_comms/protocol_data_event.dart';
+import 'package:moniepoint_pos_comms/protocol_data_request.dart';
 
 import 'orders_list_screen.dart';
 
@@ -20,12 +23,15 @@ class OrderSessionBottomSheet extends StatefulWidget {
 
 class _OrderSessionBottomSheet extends State<OrderSessionBottomSheet> {
 
+  late final IMoniepointProtocolData moniepointClient;
   late final Product product;
   final _chars = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
   final Random _rand = Random();
+  late final String refNumber = generateReference;
 
   @override
   void initState() {
+    moniepointClient = IMoniepointProtocolData.getInstance();
     product = widget.product;
     super.initState();
   }
@@ -77,7 +83,7 @@ class _OrderSessionBottomSheet extends State<OrderSessionBottomSheet> {
           height: 2,
         ),
         Text(
-            generateReference,
+            refNumber,
             style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
@@ -91,7 +97,19 @@ class _OrderSessionBottomSheet extends State<OrderSessionBottomSheet> {
             style: ButtonStyle(
                 backgroundColor: MaterialStateColor.resolveWith(
                         (states) => Colors.accentColor)),
-            onPressed: () {},
+            onPressed: () {
+              final request = ProtocolDataRequest(
+                  refNumber: refNumber, amount: product.amount
+              );
+              moniepointClient.protocolDataStream
+                  .filterForOrderResponse()
+                  .listen((event) {
+                    if (event.eventType == ProtocolEventType.acknowledged) {
+                      moniepointClient.sendRequest(request);
+                    }
+                  });
+              moniepointClient.startRequestOrderSession();
+            },
             child: const Text(
               "Proceed",
               style: TextStyle(

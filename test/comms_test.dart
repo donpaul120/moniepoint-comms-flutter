@@ -42,8 +42,14 @@ class MockCommsPlatform
   }
 
   @override
-  Future<T?> startRequestOrderSession<T>(ProtocolDataRequest request) {
+  Future<T?> startRequestOrderSession<T>() {
     // TODO: implement startRequestOrderSession
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<T?> sendRequest<T>(ProtocolDataRequest request) {
+    // TODO: implement sendRequest
     throw UnimplementedError();
   }
 

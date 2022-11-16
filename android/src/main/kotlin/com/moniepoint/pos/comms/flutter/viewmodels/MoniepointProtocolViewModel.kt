@@ -2,6 +2,7 @@ package com.moniepoint.pos.comms.flutter.viewmodels
 
 import android.net.wifi.p2p.WifiP2pDevice
 import android.net.wifi.p2p.WifiP2pManager
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.moniepoint.pos.comms.MoniepointPosP2pClientListener
@@ -50,10 +51,12 @@ class MoniepointProtocolViewModel : ViewModel() {
    }
 
    private fun handleProtocolMessages(it: ProtocolDataMessenger) {
+      Log.e("TAGResp", "${it.message}")
       when (val message = it.message) {
          is ProtocolData.AcknowledgeData -> eventSink?.success(sessionMessage("ack"))
          is ProtocolData.CancelData -> eventSink?.success(sessionMessage("can"))
          is ProtocolData.EndOfTextData -> eventSink?.success(sessionMessage("etx"))
+         is ProtocolData.InvalidData -> eventSink?.success(sessionMessage("invalid"))
          is ProtocolData.Response -> {
             eventSink?.success(sessionMessage("response", message.toMap()))
             messenger?.close()

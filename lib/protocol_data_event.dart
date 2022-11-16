@@ -20,6 +20,7 @@ const int protocolSessionMessage = 0x03;
 const String _ack = "ack";
 const String _can = "can";
 const String _etx = "etx";
+const String _invalid = "invalid";
 const String _response = "response";
 
 //Method Names
@@ -27,6 +28,7 @@ const String _cancelMethod = "sendCancel";
 const String _endOfTextMethod = "sendEndOfText";
 const String _connectToDeviceMethod = "connectToDevice";
 const String _orderReqMethod = "startOrderRequest";
+const String _sendRequestMethod = "sendProtocolDataRequest";
 const String _listenForDevicesMethod = "listenForDevices";
 
 //Params Key
@@ -36,6 +38,7 @@ enum ProtocolEventType {
   deviceList,
   connectionState,
   cancelData,
+  invalidData,
   endOfTextData,
   acknowledged,
   orderResponse,
@@ -60,6 +63,10 @@ class ProtocolEvent<T> {
 
   factory ProtocolEvent.ack() {
     return ProtocolEvent(eventType: ProtocolEventType.acknowledged, data: null);
+  }
+
+  factory ProtocolEvent.invalid() {
+    return ProtocolEvent(eventType: ProtocolEventType.invalidData, data: null);
   }
 
   static ProtocolEvent<ProtocolDataResponse> orderResponse(ProtocolDataResponse data) {
@@ -95,7 +102,8 @@ abstract class IMoniepointProtocolData extends PlatformInterface {
   late Stream<ProtocolEvent> protocolDataStream;
   IMoniepointProtocolData initialize();
   Future<T?> listenForDevicePeers<T>();
-  Future<T?> startRequestOrderSession<T>(ProtocolDataRequest request);
+  Future<T?> startRequestOrderSession<T>();
+  Future<T?> sendRequest<T>(ProtocolDataRequest request);
   Future<T?> sendCancel<T>();
   Future<T?> sendEndOfText<T>();
   Future<T?> connectToDevice<T>(String deviceAddress);
@@ -138,8 +146,8 @@ class MoniepointProtocolClient extends IMoniepointProtocolData {
   }
 
   @override
-  Future<T?> startRequestOrderSession<T>(ProtocolDataRequest request) {
-    return _methodChannel.invokeMethod(_orderReqMethod, request.toJson());
+  Future<T?> startRequestOrderSession<T>() {
+    return _methodChannel.invokeMethod(_orderReqMethod);
   }
 
   @override
@@ -157,6 +165,11 @@ class MoniepointProtocolClient extends IMoniepointProtocolData {
   @override
   Future<T?> sendEndOfText<T>() {
     return _methodChannel.invokeMethod(_endOfTextMethod);
+  }
+
+  @override
+  Future<T?> sendRequest<T>(ProtocolDataRequest request) {
+    return _methodChannel.invokeMethod(_sendRequestMethod, request.toJson());
   }
 
   void _processDeviceListMessage(List<dynamic> deviceAddresses) {
@@ -178,11 +191,11 @@ class MoniepointProtocolClient extends IMoniepointProtocolData {
     if (_ack == key) _controller.add(ProtocolEvent.ack());
     if (_can == key) _controller.add(ProtocolEvent.can());
     if (_etx == key) _controller.add(ProtocolEvent.etx());
+    if (_invalid == key) _controller.add(ProtocolEvent.invalid());
 
     if (_response == key) {
       final response = ProtocolDataResponse.fromJson(Map<String, dynamic>.from(value));
       _controller.sink.add(ProtocolEvent.orderResponse(response));
     }
   }
-
 }

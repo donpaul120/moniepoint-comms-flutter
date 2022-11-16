@@ -5,8 +5,8 @@ import 'package:flutter/material.dart' hide Colors;
 import 'package:moniepoint_pos_comms/peer_device.dart';
 import 'package:moniepoint_pos_comms/peer_device_state.dart';
 import 'package:moniepoint_pos_comms/protocol_data_event.dart';
+import 'package:moniepoint_pos_comms/protocol_stream_extension.dart';
 import 'package:provider/provider.dart';
-import 'package:rxdart/rxdart.dart';
 
 class ConnectButton extends StatefulWidget {
   const ConnectButton({
@@ -34,22 +34,9 @@ class _ConnectButtonState extends State<ConnectButton> {
     _viewModel = Provider.of<MainViewModel>(context, listen: false);
     moniepointClient = IMoniepointProtocolData.getInstance();
     peerDevice = widget.peerDevice;
-    _dataStream = deviceStateStream;
+    _dataStream = moniepointClient.protocolDataStream
+        .filterForDeviceState(peerDevice.deviceAddress);
     super.initState();
-  }
-
-  Stream<ProtocolEvent<PeerDeviceState>> get deviceStateStream {
-    return moniepointClient.protocolDataStream
-        .where((event) {
-          print("Filtering Connection state ooo ${event.eventType}");
-          if (event.eventType != ProtocolEventType.connectionState) {
-            print("Filtering and False ${event.eventType}");
-            return false;
-          }
-          final data = event.data as PeerDeviceState;
-          print("Filtering DATA DATA ooo ${event.eventType}");
-          return data.deviceAddress == peerDevice.deviceAddress;
-        }).map((event) => event as ProtocolEvent<PeerDeviceState>);
   }
 
   bool canConnect(DeviceState? state) {
@@ -73,9 +60,6 @@ class _ConnectButtonState extends State<ConnectButton> {
           _deviceState = (snapshot.hasData)
               ? (snapshot.data?.data ?? _deviceState)
               : _deviceState;
-
-          print("Snapshot ${(snapshot.hasData) ? snapshot.data?.data : "null--"}");
-          print("Device State is ${_deviceState?.deviceAddress}");
 
           final isConnected = !canConnect(_viewModel.state.deviceState);
 
