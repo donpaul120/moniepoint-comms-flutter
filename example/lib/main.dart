@@ -1,7 +1,6 @@
 
 import 'package:comms_example/core/app_route.dart';
 import 'package:comms_example/main_view_model.dart';
-import 'package:comms_example/orders/orders_list_screen.dart';
 import 'package:flutter/material.dart' hide Colors;
 import 'package:moniepoint_pos_comms/peer_device.dart';
 import 'package:moniepoint_pos_comms/protocol_data_event.dart';
