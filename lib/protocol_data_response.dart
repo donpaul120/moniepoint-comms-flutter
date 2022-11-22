@@ -23,6 +23,13 @@ class ProtocolDataResponse {
       this.transDate,
       this.transTime});
 
+  @override
+  String toString(){
+    return "MaskedPan($maskedPan), ResponseCode($responseCode), "
+        "AuthorizationCode($authorizationCode), RetrievalRefNo($retrievalRefNo), "
+        "TerminalID($terminalID), TransDate($transDate), TransTime($transTime)";
+  }
+
   factory ProtocolDataResponse.fromJson(Map<String, dynamic> json) =>
       _$ProtocolDataResponseFromJson(json);
 

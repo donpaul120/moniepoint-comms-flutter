@@ -1,9 +1,10 @@
 import 'dart:async';
 
-import 'package:comms/peer_device.dart';
 import 'package:flutter/services.dart';
+import 'package:moniepoint_pos_comms/peer_device_state.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import 'peer_device.dart';
 import 'protocol_data_request.dart';
 import 'protocol_data_response.dart';
 
@@ -19,6 +20,7 @@ const int protocolSessionMessage = 0x03;
 const String _ack = "ack";
 const String _can = "can";
 const String _etx = "etx";
+const String _invalid = "invalid";
 const String _response = "response";
 
 //Method Names
@@ -26,6 +28,7 @@ const String _cancelMethod = "sendCancel";
 const String _endOfTextMethod = "sendEndOfText";
 const String _connectToDeviceMethod = "connectToDevice";
 const String _orderReqMethod = "startOrderRequest";
+const String _sendRequestMethod = "sendProtocolDataRequest";
 const String _listenForDevicesMethod = "listenForDevices";
 
 //Params Key
@@ -33,8 +36,9 @@ const String _deviceAddressKey = "deviceAddress";
 
 enum ProtocolEventType {
   deviceList,
-  deviceConnection,
+  connectionState,
   cancelData,
+  invalidData,
   endOfTextData,
   acknowledged,
   orderResponse,
@@ -61,6 +65,10 @@ class ProtocolEvent<T> {
     return ProtocolEvent(eventType: ProtocolEventType.acknowledged, data: null);
   }
 
+  factory ProtocolEvent.invalid() {
+    return ProtocolEvent(eventType: ProtocolEventType.invalidData, data: null);
+  }
+
   static ProtocolEvent<ProtocolDataResponse> orderResponse(ProtocolDataResponse data) {
     return ProtocolEvent<ProtocolDataResponse>(
         eventType: ProtocolEventType.orderResponse, data: data
@@ -70,6 +78,12 @@ class ProtocolEvent<T> {
   static ProtocolEvent<List<PeerDevice>> deviceList(List<PeerDevice> data) {
     return ProtocolEvent<List<PeerDevice>>(
         eventType: ProtocolEventType.deviceList, data: data
+    );
+  }
+
+  static ProtocolEvent<PeerDeviceState> connectionState(PeerDeviceState data) {
+    return ProtocolEvent<PeerDeviceState>(
+        eventType: ProtocolEventType.connectionState, data: data
     );
   }
 }
@@ -88,7 +102,8 @@ abstract class IMoniepointProtocolData extends PlatformInterface {
   late Stream<ProtocolEvent> protocolDataStream;
   IMoniepointProtocolData initialize();
   Future<T?> listenForDevicePeers<T>();
-  Future<T?> startRequestOrderSession<T>(ProtocolDataRequest request);
+  Future<T?> startRequestOrderSession<T>();
+  Future<T?> sendRequest<T>(ProtocolDataRequest request);
   Future<T?> sendCancel<T>();
   Future<T?> sendEndOfText<T>();
   Future<T?> connectToDevice<T>(String deviceAddress);
@@ -131,8 +146,8 @@ class MoniepointProtocolClient extends IMoniepointProtocolData {
   }
 
   @override
-  Future<T?> startRequestOrderSession<T>(ProtocolDataRequest request) {
-    return _methodChannel.invokeMethod(_orderReqMethod, request.toJson());
+  Future<T?> startRequestOrderSession<T>() {
+    return _methodChannel.invokeMethod(_orderReqMethod);
   }
 
   @override
@@ -152,6 +167,11 @@ class MoniepointProtocolClient extends IMoniepointProtocolData {
     return _methodChannel.invokeMethod(_endOfTextMethod);
   }
 
+  @override
+  Future<T?> sendRequest<T>(ProtocolDataRequest request) {
+    return _methodChannel.invokeMethod(_sendRequestMethod, request.toJson());
+  }
+
   void _processDeviceListMessage(List<dynamic> deviceAddresses) {
     final deviceList = deviceAddresses.map((e) {
       return PeerDevice.fromJson(Map<String, dynamic>.from(e));
@@ -159,7 +179,9 @@ class MoniepointProtocolClient extends IMoniepointProtocolData {
     _controller.sink.add(ProtocolEvent.deviceList(deviceList));
   }
 
-  void _processDeviceConnectionMessage(String connectionMessage) {
+  void _processDeviceConnectionMessage(Map<dynamic, dynamic> map) {
+    final deviceState = PeerDeviceState.fromJson(Map<String, dynamic>.from(map));
+    _controller.sink.add(ProtocolEvent.connectionState(deviceState));
   }
 
   void _processProtocolSessionMessage(Map<dynamic, dynamic> map) {
@@ -169,11 +191,11 @@ class MoniepointProtocolClient extends IMoniepointProtocolData {
     if (_ack == key) _controller.add(ProtocolEvent.ack());
     if (_can == key) _controller.add(ProtocolEvent.can());
     if (_etx == key) _controller.add(ProtocolEvent.etx());
+    if (_invalid == key) _controller.add(ProtocolEvent.invalid());
 
     if (_response == key) {
       final response = ProtocolDataResponse.fromJson(Map<String, dynamic>.from(value));
-      _controller.add(ProtocolEvent.orderResponse(response));
+      _controller.sink.add(ProtocolEvent.orderResponse(response));
     }
   }
-
 }

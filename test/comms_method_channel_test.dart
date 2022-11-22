@@ -1,6 +1,6 @@
-import 'package:comms/protocol_data_event.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:moniepoint_pos_comms/protocol_data_event.dart';
 
 void main() {
   IMoniepointProtocolData platform = IMoniepointProtocolData.getInstance();
