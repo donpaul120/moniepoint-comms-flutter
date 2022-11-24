@@ -59,7 +59,6 @@ class MoniepointProtocolViewModel : ViewModel() {
          is ProtocolData.InvalidData -> eventSink?.success(sessionMessage("invalid"))
          is ProtocolData.Response -> {
             eventSink?.success(sessionMessage("response", message.toMap()))
-            messenger?.close()
          }
          else -> {
             //do nothing
