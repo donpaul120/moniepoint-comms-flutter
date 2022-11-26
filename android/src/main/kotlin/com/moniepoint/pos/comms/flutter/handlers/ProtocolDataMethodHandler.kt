@@ -21,7 +21,10 @@ class ProtocolDataMethodHandler(
             val address = call.argument<String?>(DEVICE_ADDRESS_KEY)
             viewModel.connectToDevice(client, address)
          }
-         SEND_CANCEL -> viewModel.sendStandardMessage(ProtocolData.CancelData)
+         SEND_CANCEL -> {
+            viewModel.sendStandardMessage(ProtocolData.CancelData)
+            viewModel.closeMessenger()
+         }
          SEND_END_OF_TEXT -> viewModel.sendStandardMessage(ProtocolData.EndOfTextData)
          START_ORDER_REQUEST -> viewModel.initiatePosRequest(client)
          SEND_REQUEST -> return sendRequest(call, result)

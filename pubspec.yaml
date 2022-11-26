@@ -1,7 +1,7 @@
-name: comms
+name: moniepoint_pos_comms
 description: A new Flutter plugin project.
 version: 0.0.1
-homepage:
+homepage: https://moniepoint.com
 
 environment:
   sdk: '>=2.18.2 <3.0.0'

@@ -9,14 +9,16 @@ import com.moniepoint.pos.comms.MoniepointPosP2pClientListener
 import com.moniepoint.pos.comms.client.MoniepointPeer
 import com.moniepoint.pos.comms.data.ProtocolData
 import com.moniepoint.pos.comms.data.ProtocolDataMessenger
-import com.moniepoint.pos.comms.flutter.handlers.Constants.Companion.deviceConnectionMessage
 import com.moniepoint.pos.comms.flutter.handlers.Constants.Companion.deviceListMessage
-import com.moniepoint.pos.comms.flutter.handlers.ProtocolDataStreamHandler.Companion.deviceMessage
-import com.moniepoint.pos.comms.flutter.handlers.ProtocolDataStreamHandler.Companion.sessionMessage
+import com.moniepoint.pos.comms.flutter.handlers.deviceMessage
+import com.moniepoint.pos.comms.flutter.handlers.deviceStateMessage
+import com.moniepoint.pos.comms.flutter.handlers.sessionMessage
 import com.moniepoint.pos.comms.flutter.handlers.toMap
 import io.flutter.plugin.common.EventChannel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * @author Paul Okeke
@@ -41,7 +43,7 @@ class MoniepointProtocolViewModel : ViewModel() {
    }
 
    fun initiatePosRequest(client: MoniepointPeer) {
-      viewModelScope.launch {
+      viewModelScope.launch(Dispatchers.IO) {
          client.initiatePosRequest(ProtocolData.EnquiryData).collectLatest {
             this@MoniepointProtocolViewModel.messenger = it
             handleProtocolMessages(it)
@@ -49,14 +51,14 @@ class MoniepointProtocolViewModel : ViewModel() {
       }
    }
 
-   private fun handleProtocolMessages(it: ProtocolDataMessenger) {
+   private suspend fun handleProtocolMessages(it: ProtocolDataMessenger) = withContext(Dispatchers.Main){
       when (val message = it.message) {
          is ProtocolData.AcknowledgeData -> eventSink?.success(sessionMessage("ack"))
          is ProtocolData.CancelData -> eventSink?.success(sessionMessage("can"))
          is ProtocolData.EndOfTextData -> eventSink?.success(sessionMessage("etx"))
+         is ProtocolData.InvalidData -> eventSink?.success(sessionMessage("invalid"))
          is ProtocolData.Response -> {
             eventSink?.success(sessionMessage("response", message.toMap()))
-            messenger?.close()
          }
          else -> {
             //do nothing
@@ -78,16 +80,22 @@ class MoniepointProtocolViewModel : ViewModel() {
 
       client.connect(deviceAddress, object : WifiP2pManager.ActionListener {
          override fun onSuccess() {
-            eventSink?.success(hashMapOf(deviceConnectionMessage to "$deviceAddress:1"))
+            eventSink?.success(deviceStateMessage(deviceAddress, 1))
          }
 
          override fun onFailure(p0: Int) {
-            eventSink?.success(hashMapOf(deviceConnectionMessage to "$deviceAddress:0:$p0"))
+            eventSink?.success(deviceStateMessage(deviceAddress, 3, p0))
          }
       })
    }
 
+   fun closeMessenger() {
+      messenger?.close()
+   }
+
    fun sendStandardMessage(protocolData: ProtocolData) {
-      viewModelScope.launch { messenger?.replyMessage(protocolData) }
+      viewModelScope.launch(Dispatchers.IO) {
+         messenger?.replyMessage(protocolData)
+      }
    }
 }

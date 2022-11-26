@@ -1,5 +1,5 @@
 
-import 'package:comms/protocol_data_event.dart';
+import 'protocol_data_event.dart';
 
 class Comms {
 

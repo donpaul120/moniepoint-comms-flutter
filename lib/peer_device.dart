@@ -6,9 +6,7 @@ part 'peer_device.g.dart';
 
 @JsonSerializable()
 class PeerDevice {
-  @JsonKey(name: "name")
   final String deviceName;
-  @JsonKey(name: "address")
   final String deviceAddress;
 
   PeerDevice({
